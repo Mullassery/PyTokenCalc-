@@ -31,6 +31,9 @@ None - v2.0.0 production-ready
 - [ ] Memory optimization (target <200MB)
 - [ ] Connection pooling
 
+#### Tokenizer Accuracy
+- [ ] Detect/handle tiktoken encoding drift — `MODEL_TO_ENCODING` (`openai_counter.py`) is a hardcoded model→encoding dict with no mechanism to detect when upstream vocab/BPE rules change; needs a version-drift check or automated re-sync, not just a wider model-name allowlist
+
 ### 🟡 MEDIUM (Q3-Q4 2026)
 
 #### Features
@@ -38,6 +41,7 @@ None - v2.0.0 production-ready
 - [ ] Retry logic with exponential backoff
 - [ ] Graceful degradation
 - [ ] Fallback mechanisms
+- [ ] Streaming/incremental token counting — `TokenCounter` (`tokenizers/base.py`) and every provider implementation only expose whole-input `count()`; no chunk-by-chunk delta API for metering live/streaming LLM responses
 
 #### Architecture
 - [ ] Code refactoring (simplify hot paths)
