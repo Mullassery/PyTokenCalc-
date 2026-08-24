@@ -4,9 +4,13 @@ Provides 100% accurate token counting for GPT-4, GPT-4o, and GPT-3.5 models.
 """
 
 from typing import List, Dict, Any
+import logging
 import time
 
 from .base import TokenCounter, TokenCountResult
+from .encoding_fingerprint import check_drift
+
+logger = logging.getLogger(__name__)
 
 try:
     import tiktoken
@@ -18,7 +22,13 @@ except ImportError:
 class OpenAITokenCounter(TokenCounter):
     """OpenAI token counter using tiktoken library"""
 
-    # Model to encoding mapping
+    # Fallback model->encoding mapping, used only when tiktoken's own
+    # `encoding_for_model` doesn't recognize a model name (e.g. a very new
+    # or internal/custom alias tiktoken hasn't shipped a mapping for yet).
+    # This used to be the *primary* resolution path, which is exactly the
+    # "hardcoded map goes stale" problem: tiktoken's own registry is
+    # maintained upstream and updates when you upgrade tiktoken, this
+    # fallback dict does not. See `_get_encoding`.
     MODEL_TO_ENCODING = {
         "gpt-4": "cl100k_base",
         "gpt-4-32k": "cl100k_base",
@@ -44,6 +54,7 @@ class OpenAITokenCounter(TokenCounter):
             )
 
         self.encodings = {}  # Cache loaded encodings
+        self.drift_warnings: List[str] = []
         self._load_default_encodings()
 
     def _load_default_encodings(self):
@@ -54,14 +65,47 @@ class OpenAITokenCounter(TokenCounter):
         except Exception as e:
             raise RuntimeError(f"Failed to load tiktoken encodings: {e}")
 
+        for encoding in self.encodings.values():
+            self._check_and_record_drift(encoding)
+
+    def _check_and_record_drift(self, encoding) -> None:
+        """Compare `encoding`'s live fingerprint against the one recorded in
+        encoding_fingerprint.py and record/log a warning on mismatch -- the
+        actual "detect upstream vocab/BPE drift" mechanism, not just a
+        model-name lookup."""
+        warning = check_drift(encoding)
+        if warning is not None and warning not in self.drift_warnings:
+            self.drift_warnings.append(warning)
+            logger.warning(warning)
+
     def _get_encoding(self, model: str):
-        """Get tiktoken encoding for model"""
-        encoding_name = self.MODEL_TO_ENCODING.get(model, "cl100k_base")
+        """Get tiktoken encoding for model.
 
-        if encoding_name not in self.encodings:
-            self.encodings[encoding_name] = tiktoken.get_encoding(encoding_name)
+        Prefers tiktoken's own `encoding_for_model`, which is maintained
+        upstream and stays current as tiktoken releases add new models --
+        the hardcoded MODEL_TO_ENCODING dict below is only a fallback for
+        models tiktoken doesn't recognize yet.
+        """
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding_name = self.MODEL_TO_ENCODING.get(model, "cl100k_base")
+            if model not in self.MODEL_TO_ENCODING:
+                logger.info(
+                    "Model '%s' not recognized by tiktoken.encoding_for_model or the "
+                    "fallback map; defaulting to cl100k_base. Token count may be inaccurate "
+                    "for this model.",
+                    model,
+                )
+            if encoding_name not in self.encodings:
+                self.encodings[encoding_name] = tiktoken.get_encoding(encoding_name)
+                self._check_and_record_drift(self.encodings[encoding_name])
+            return self.encodings[encoding_name]
 
-        return self.encodings[encoding_name]
+        if encoding.name not in self.encodings:
+            self.encodings[encoding.name] = encoding
+            self._check_and_record_drift(encoding)
+        return encoding
 
     @property
     def provider_name(self) -> str:
@@ -120,6 +164,7 @@ class OpenAITokenCounter(TokenCounter):
             "library": "tiktoken",
             "version": getattr(tiktoken, "__version__", "unknown"),
             "encoding_mapping": self.MODEL_TO_ENCODING,
+            "drift_warnings": list(self.drift_warnings),
         })
         return info
 

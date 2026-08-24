@@ -5,4 +5,4 @@ sync between the two -- setuptools reads pyproject.toml for packaging
 metadata, this module is what the library reads at runtime/import time).
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

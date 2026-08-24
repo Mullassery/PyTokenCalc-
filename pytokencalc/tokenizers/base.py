@@ -5,8 +5,11 @@ Each provider (OpenAI, Llama, Anthropic, etc.) has its own implementation.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from .streaming import StreamingTokenCounter
 
 
 @dataclass
@@ -173,3 +176,11 @@ class TokenCounter(ABC):
             "provider": self.provider_name,
             "supported_models": self.supported_models,
         }
+
+    def streaming(self, model: str) -> "StreamingTokenCounter":
+        """Get an incremental counter for a live/streaming response with
+        this provider's tokenizer. See `streaming.StreamingTokenCounter`.
+        """
+        from .streaming import StreamingTokenCounter
+
+        return StreamingTokenCounter(self, model)

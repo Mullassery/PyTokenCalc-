@@ -32,7 +32,7 @@ None - v2.0.0 production-ready
 - [ ] Connection pooling
 
 #### Tokenizer Accuracy
-- [ ] Detect/handle tiktoken encoding drift — `MODEL_TO_ENCODING` (`openai_counter.py`) is a hardcoded model→encoding dict with no mechanism to detect when upstream vocab/BPE rules change; needs a version-drift check or automated re-sync, not just a wider model-name allowlist
+- [x] Detect/handle tiktoken encoding drift — `_get_encoding` now prefers `tiktoken.encoding_for_model()` (maintained upstream, stays current) with `MODEL_TO_ENCODING` only as a fallback for models tiktoken doesn't recognize yet. `encoding_fingerprint.py` adds a real drift detector: hashes each loaded encoding's vocab size + its tokenization of a fixed calibration string, compares against a recorded fingerprint, and logs/records a warning (surfaced in `get_tokenizer_info()["drift_warnings"]`) if the installed tiktoken's actual BPE behavior has changed. `scripts/verify_encoding_fingerprints.py` re-verifies and prints updated values for a deliberate tiktoken upgrade.
 
 ### 🟡 MEDIUM (Q3-Q4 2026)
 
@@ -41,7 +41,7 @@ None - v2.0.0 production-ready
 - [ ] Retry logic with exponential backoff
 - [ ] Graceful degradation
 - [ ] Fallback mechanisms
-- [ ] Streaming/incremental token counting — `TokenCounter` (`tokenizers/base.py`) and every provider implementation only expose whole-input `count()`; no chunk-by-chunk delta API for metering live/streaming LLM responses
+- [x] Streaming/incremental token counting — `tokenizers/streaming.py`'s `StreamingTokenCounter` wraps any `TokenCounter` (provider-agnostic, not tiktoken-specific) and gives a real chunk-by-chunk delta API (`add_chunk()`) for metering live/streaming LLM responses. Recomputes against the full accumulated text on each chunk rather than summing independent per-chunk counts, so BPE merges spanning a chunk boundary are still counted correctly (verified against the real tiktoken-backed counter, not just a fake one). `TokenCounter.streaming(model)` is the convenience entry point.
 
 #### Architecture
 - [ ] Code refactoring (simplify hot paths)

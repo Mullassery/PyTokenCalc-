@@ -7,7 +7,7 @@ include = ["pytokencalc", "pytokencalc.*"]
 
 [project]
 name = "pytokencalc"
-version = "1.1.0"
+version = "1.2.0"
 description = "Universal token counting for ANY LLM with embedded StatGuardian quality validation: 8 cloud providers, 7 local inference engines, custom/proprietary models, and BYOM (Bring Your Own Model). Pattern-based forward-compatibility, model discovery, platform-aware tracking, 99%+ accuracy."
 readme = "README.md"
 requires-python = ">=3.9"

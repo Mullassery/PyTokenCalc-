@@ -65,6 +65,14 @@ print(f"Cost: ${cost:.6f}")
 - **Batch processing:** count tokens for many prompts in one call
 - **Custom / BYOM models:** register your own provider or fine-tuned model
   (see [CUSTOM_PROVIDERS.md](CUSTOM_PROVIDERS.md))
+- **Streaming/incremental counting:** `counter.streaming(model)` gives you a
+  running token count as chunks of a live LLM response arrive, correct
+  across chunk/BPE-merge boundaries (not a naive per-chunk sum)
+- **Encoding drift detection:** OpenAI's tiktoken encoding resolution now
+  prefers `tiktoken.encoding_for_model()` (stays current with tiktoken
+  upgrades) and flags in `get_tokenizer_info()["drift_warnings"]` if an
+  installed encoding's actual tokenization behavior has changed since this
+  library was last verified against it
 
 ---
 

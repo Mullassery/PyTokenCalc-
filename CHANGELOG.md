@@ -2,6 +2,30 @@
 
 All notable changes to PyTokenCalc are documented in this file.
 
+## [1.2.0]
+
+### Added
+
+- **Tiktoken encoding drift detection** (`tokenizers/encoding_fingerprint.py`).
+  `OpenAITokenCounter._get_encoding` now resolves models via
+  `tiktoken.encoding_for_model()` first (maintained upstream, so it stays
+  current across tiktoken upgrades) with the old hardcoded
+  `MODEL_TO_ENCODING` dict demoted to a fallback for models tiktoken
+  doesn't recognize yet. A real fingerprint check (vocab size + tokenization
+  of a fixed calibration string, hashed) detects when an installed
+  encoding's actual BPE behavior has changed since this library was last
+  verified against it, surfaced via `get_tokenizer_info()["drift_warnings"]`.
+  `scripts/verify_encoding_fingerprints.py` recomputes fingerprints for a
+  deliberate tiktoken upgrade.
+- **Streaming/incremental token counting** (`tokenizers/streaming.py`).
+  `StreamingTokenCounter` wraps any `TokenCounter` (works across every
+  provider, not just OpenAI) and gives a real chunk-by-chunk delta API
+  (`add_chunk()`) for metering live/streaming LLM responses, recomputing
+  against the full accumulated text each call so BPE merges spanning a
+  chunk boundary are counted correctly rather than approximated by summing
+  independent per-chunk counts. `TokenCounter.streaming(model)` is the
+  convenience entry point.
+
 ## [1.1.0] - 2026-08-12
 
 Remediation release: the CLI, REST server, and documented quick-start
