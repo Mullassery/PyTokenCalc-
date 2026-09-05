@@ -10,7 +10,7 @@ maintained per-model pricing table.
 [![PyPI](https://img.shields.io/pypi/v/pytokencalc)](https://pypi.org/project/pytokencalc)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org)
 [![CI](https://github.com/Mullassery/PyTokenCalc/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyTokenCalc/actions/workflows/ci.yml)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](./LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
 ---
 
@@ -158,7 +158,7 @@ Requires Python 3.9+.
 
 ## License
 
-Proprietary License - Free to use with explicit attribution. See [LICENSE](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
